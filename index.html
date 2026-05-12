@@ -548,48 +548,64 @@ function doCart(){
   btn.textContent="Wird hinzugefügt…";
   btn.style.opacity="0.7";
 
-  var variantId = 50136770609485;
+  /* Konfigurierten Preis berechnen */
+  var BASE=1290;
+  var DP={led:{"Keine":0,"Gen 1":180,"Gen 2":280,"Gen 3":420},carbon:{"Glanz":0,"Matt":60,"Forged":120,"Forged+Pig":160},mat:{"Leder":0,"Perf.":80,"Alcantara":150},stripe:{"Nein":0,"Ja":40},flat:{"Nein":0,"Ja":90},airbag:{"Nein":0,"Ja":120}};
+  var totalPrice = BASE
+    +(DP.led[CFG.led]||0)
+    +(DP.carbon[CFG.carbon]||0)
+    +(DP.mat[CFG.mat]||0)
+    +(DP.stripe[CFG.stripe]||0)
+    +(DP.flat[CFG.flat]||0)
+    +(DP.airbag[CFG.airbag]||0);
 
-  var properties = {
+  /* Konfigurationsdetails als Properties */
+  var props = {
     "Fahrzeugmarke":     SEL.n,
-    "LED Schaltanzeige": CFG.led,
-    "Carbon Art":        CFG.carbon,
-    "Material":          CFG.mat,
+    "LED Schaltanzeige": CFG.led      + (DP.led[CFG.led]      ? " (+"+DP.led[CFG.led]+"€)"      : ""),
+    "Carbon Art":        CFG.carbon   + (DP.carbon[CFG.carbon] ? " (+"+DP.carbon[CFG.carbon]+"€)" : ""),
+    "Material":          CFG.mat      + (DP.mat[CFG.mat]       ? " (+"+DP.mat[CFG.mat]+"€)"       : ""),
     "Nahtfarbe":         CFG.stitch.n,
-    "12-Uhr Markierung": CFG.stripe,
-    "Flat Bottom":       CFG.flat,
-    "Airbagkappe":       CFG.airbag
+    "12-Uhr Markierung": CFG.stripe   + (DP.stripe[CFG.stripe] ? " (+"+DP.stripe[CFG.stripe]+"€)" : ""),
+    "Flat Bottom":       CFG.flat     + (DP.flat[CFG.flat]     ? " (+"+DP.flat[CFG.flat]+"€)"     : ""),
+    "Airbagkappe":       CFG.airbag   + (DP.airbag[CFG.airbag] ? " (+"+DP.airbag[CFG.airbag]+"€)": ""),
+    "Gesamtpreis":       totalPrice + " EUR"
   };
 
-  /* Option 1: Direkt Shopify Cart API (wenn gleiche Domain) */
-  fetch("https://www.cafony.com/cart/add.js", {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({
-      items: [{
-        id: variantId,
-        quantity: 1,
-        properties: properties
-      }]
-    })
-  })
-  .then(function(r){ return r.json(); })
-  .then(function(){
-    btn.textContent="✓ Im Warenkorb!";
-    btn.classList.add("done");
-    setTimeout(function(){
-      /* Zum Shopify Warenkorb weiterleiten */
-      window.top.location.href = "https://www.cafony.com/cart";
-    }, 1000);
-  })
-  .catch(function(){
-    /* Option 2: Fallback — URL Parameter Methode */
-    var params = "?id="+variantId+"&quantity=1";
-    Object.keys(properties).forEach(function(k){
-      params += "&properties["+encodeURIComponent(k)+"]="+encodeURIComponent(properties[k]);
-    });
-    window.top.location.href = "https://www.cafony.com/cart/add"+params;
+  /* Shopify Cart Permalink mit Preis
+     Nutzt /cart/variantId:1 URL mit allen Properties als Query Parameter
+     Der Preis wird als Note übergeben — Shopify zeigt ihn im Warenkorb */
+  var cartUrl = "https://www.cafony.com/cart/50136770609485:1?";
+  
+  /* Properties als URL Parameter */
+  var paramParts = [];
+  Object.keys(props).forEach(function(k){
+    paramParts.push("attributes["+encodeURIComponent(k)+"]="+encodeURIComponent(props[k]));
   });
+  
+  /* Note mit Konfiguration und Preis */
+  var note = "CAFONY KONFIGURATION\n";
+  note += "========================\n";
+  note += "Fahrzeug: " + SEL.n + "\n";
+  note += "LED: " + CFG.led + "\n";
+  note += "Carbon: " + CFG.carbon + "\n";
+  note += "Material: " + CFG.mat + "\n";
+  note += "Nahtfarbe: " + CFG.stitch.n + "\n";
+  note += "12-Uhr: " + CFG.stripe + "\n";
+  note += "Flat Bottom: " + CFG.flat + "\n";
+  note += "Airbagkappe: " + CFG.airbag + "\n";
+  note += "========================\n";
+  note += "KONFIGURIERTER PREIS: " + totalPrice + " EUR";
+  
+  paramParts.push("note="+encodeURIComponent(note));
+  cartUrl += paramParts.join("&");
+
+  btn.textContent="✓ Im Warenkorb! ("+totalPrice+"€)";
+  btn.classList.add("done");
+  
+  setTimeout(function(){
+    window.top.location.href = cartUrl;
+  }, 800);
 }
 </script>
 </body>
