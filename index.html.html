@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cafony – 3D Lenkrad Konfigurator</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,700&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#09090C;color:#EEEAE0;font-family:'Barlow',sans-serif;overflow:hidden}
+
+/* ═══ NAV ═══ */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;height:58px;
+  background:rgba(5,5,8,0.97);border-bottom:1px solid rgba(255,255,255,0.07);
+  display:flex;align-items:center;justify-content:space-between;padding:0 28px;
+  backdrop-filter:blur(20px);}
+.nav-logo{display:flex;align-items:center;gap:0;cursor:pointer}
+.nav-logo img{height:36px;filter:invert(1) brightness(2)}
+.nav-steps{display:flex;align-items:center}
+.ns{font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:3px;
+  text-transform:uppercase;color:rgba(255,255,255,0.18);padding:6px 14px;
+  cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.2s;}
+.ns.on{color:#fff;border-bottom-color:#fff}
+.nav-sep{color:rgba(255,255,255,0.1);margin:0 2px;font-size:10px}
+.nav-price{font-family:'Barlow Condensed',sans-serif;font-size:21px;font-weight:700;color:#fff}
+
+/* ═══ SCREENS ═══ */
+.scr{display:none;position:fixed;inset:0;padding-top:58px}
+.scr.on{display:block}
+
+/* ══════════════════════════════
+   SCREEN 1 — BRAND SELECTION
+══════════════════════════════ */
+.s1-inner{height:100%;overflow-y:auto;background:#09090C}
+.s1-hero{
+  position:relative;padding:64px 56px 50px;
+  background:linear-gradient(135deg,#09090C 50%,#111116 100%);
+  overflow:hidden;
+}
+.s1-hero-glow{position:absolute;right:15%;top:50%;transform:translateY(-50%);
+  width:420px;height:420px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,255,255,0.04) 0%,transparent 70%);
+  pointer-events:none;}
+.s1-tag{font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:7px;
+  color:rgba(255,255,255,0.28);text-transform:uppercase;margin-bottom:18px;
+  display:flex;align-items:center;gap:12px;}
+.s1-tag::before{content:'';width:28px;height:1px;background:rgba(255,255,255,0.28)}
+.s1-h{font-family:'Barlow Condensed',sans-serif;font-size:76px;font-weight:900;
+  text-transform:uppercase;line-height:0.9;letter-spacing:-2px;color:#fff;}
+.s1-h em{font-style:italic;color:rgba(255,255,255,0.3)}
+.s1-p{font-size:14px;line-height:1.75;color:rgba(238,234,224,0.38);margin-top:20px;max-width:420px}
+.s1-pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.pill{padding:4px 12px;border:1px solid rgba(255,255,255,0.14);font-family:'Barlow Condensed',sans-serif;
+  font-size:9px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,0.28)}
+
+/* MARQUEE */
+.mq{overflow:hidden;background:#0D0D10;border-top:1px solid rgba(255,255,255,0.05);
+  border-bottom:1px solid rgba(255,255,255,0.05);padding:9px 0;white-space:nowrap;}
+.mq-i{display:inline-flex;animation:mroll 22s linear infinite}
+@keyframes mroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.mqi{font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:5px;
+  text-transform:uppercase;color:rgba(255,255,255,0.2);padding:0 26px;
+  border-right:1px solid rgba(255,255,255,0.06);}
+.mqi::before{content:'◆';margin-right:10px;font-size:6px;color:rgba(255,255,255,0.15)}
+
+/* FILTER */
+.fbar{display:flex;background:#0D0D10;border-bottom:1px solid rgba(255,255,255,0.06);padding:0 32px;overflow-x:auto}
+.fb{font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;
+  color:rgba(255,255,255,0.2);padding:12px 18px;background:transparent;border:none;cursor:pointer;
+  border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;transition:all 0.18s;}
+.fb:hover{color:rgba(255,255,255,0.6)}.fb.on{color:#fff;border-bottom-color:#fff}
+
+/* BRAND GRID */
+.bgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:rgba(255,255,255,0.04);margin:22px 32px 0}
+.bc{position:relative;background:#0D0D10;cursor:pointer;overflow:hidden;transition:background 0.2s}
+.bc:hover{background:#131318}.bc.on{background:#131318;outline:1px solid rgba(255,255,255,0.22)}
+.bc.hide{display:none}
+.bc::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:#fff;transform:scaleX(0);transition:transform 0.27s}
+.bc:hover::after,.bc.on::after{transform:scaleX(1)}
+.bc-tick{position:absolute;top:7px;right:7px;z-index:5;width:16px;height:16px;border-radius:50%;
+  background:#fff;display:none;align-items:center;justify-content:center;font-size:8px;color:#09090C;font-weight:900}
+.bc.on .bc-tick{display:flex}
+.bc-info{padding:12px 14px 13px}
+.bc-name{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:3px;
+  text-transform:uppercase;color:rgba(255,255,255,0.22);transition:color 0.2s}
+.bc:hover .bc-name,.bc.on .bc-name{color:#fff}
+.bc-fit{font-size:9px;color:rgba(238,234,224,0.15);line-height:1.5;margin-top:2px}
+/* Colored marker top of card */
+.bc-bar{height:2px;background:rgba(255,255,255,0.08);transition:background 0.2s}
+.bc:hover .bc-bar,.bc.on .bc-bar{background:#fff}
+
+.s1-cta{display:flex;justify-content:center;padding:32px 0 56px}
+.s1-btn{padding:15px 60px;border:1px solid rgba(255,255,255,0.16);background:transparent;
+  font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:7px;
+  text-transform:uppercase;color:rgba(255,255,255,0.2);cursor:pointer;
+  opacity:0.3;pointer-events:none;transition:all 0.25s;}
+.s1-btn.live{opacity:1;pointer-events:all;color:#fff;border-color:rgba(255,255,255,0.5)}
+.s1-btn.live:hover{background:#fff;color:#09090C}
+
+/* ══════════════════════════════════════
+   SCREEN 2 — 3D CONFIGURATOR
+══════════════════════════════════════ */
+.cfg-layout{display:grid;grid-template-columns:1fr 390px;height:100%}
+
+/* 3D CANVAS AREA */
+.canvas-wrap{
+  position:relative;background:#0C0C10;overflow:hidden;
+}
+#threeCanvas{width:100%;height:100%;display:block;cursor:grab}
+#threeCanvas:active{cursor:grabbing}
+
+/* HUD overlays */
+.hud-brand{
+  position:absolute;top:18px;left:18px;z-index:10;
+  display:flex;align-items:center;gap:12px;
+  background:rgba(5,5,8,0.92);border:1px solid rgba(255,255,255,0.1);
+  padding:10px 16px;backdrop-filter:blur(10px);
+}
+.hb-logo{width:42px;height:26px;display:flex;align-items:center;justify-content:center}
+.hb-logo svg{filter:brightness(10) saturate(0)}
+.hb-name{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#fff}
+.hb-model{font-size:9px;color:rgba(255,255,255,0.35);letter-spacing:1px;margin-top:1px}
+
+.hud-live{position:absolute;top:18px;right:18px;z-index:10;
+  display:flex;align-items:center;gap:6px;font-family:'Barlow Condensed',sans-serif;
+  font-size:9px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,0.3);}
+.hld{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.6);animation:hlp 2s ease-in-out infinite}
+@keyframes hlp{0%,100%{opacity:0.3}50%{opacity:1}}
+
+/* VIEW BUTTONS */
+.hud-views{
+  position:absolute;bottom:68px;left:50%;transform:translateX(-50%);z-index:10;
+  display:flex;gap:4px;background:rgba(5,5,8,0.92);
+  border:1px solid rgba(255,255,255,0.1);padding:5px;backdrop-filter:blur(10px);
+}
+.vbtn{padding:6px 14px;font-family:'Barlow Condensed',sans-serif;font-size:9px;letter-spacing:2px;
+  text-transform:uppercase;color:rgba(255,255,255,0.3);background:transparent;
+  border:1px solid transparent;cursor:pointer;transition:all 0.2s;}
+.vbtn:hover{color:rgba(255,255,255,0.7)}.vbtn.on{color:#fff;background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.2)}
+
+/* DRAG HINT */
+.drag-hint{position:absolute;bottom:68px;right:18px;z-index:10;
+  font-family:'Barlow Condensed',sans-serif;font-size:9px;letter-spacing:2px;
+  text-transform:uppercase;color:rgba(255,255,255,0.2);
+  display:flex;align-items:center;gap:6px;}
+.drag-icon{font-size:12px;animation:dragAnim 3s ease-in-out infinite}
+@keyframes dragAnim{0%,100%{transform:rotate(0deg)}50%{transform:rotate(15deg)}}
+
+/* TOAST */
+.toast{position:absolute;bottom:120px;left:50%;transform:translateX(-50%);z-index:20;
+  background:rgba(5,5,8,0.95);border:1px solid rgba(255,255,255,0.2);
+  padding:8px 18px;display:flex;align-items:center;gap:10px;
+  font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:3px;
+  text-transform:uppercase;color:#fff;opacity:0;transition:opacity 0.28s;
+  pointer-events:none;backdrop-filter:blur(10px);white-space:nowrap;}
+.toast.on{opacity:1}
+.wv{display:flex;align-items:center;gap:2px;height:14px}
+.wb{width:2px;background:#fff;border-radius:1px}
+.wb:nth-child(1){animation:wa 0.5s ease-in-out infinite}
+.wb:nth-child(2){animation:wb2 0.5s ease-in-out infinite 0.09s}
+.wb:nth-child(3){animation:wa 0.5s ease-in-out infinite 0.18s}
+.wb:nth-child(4){animation:wb2 0.5s ease-in-out infinite 0.07s}
+.wb:nth-child(5){animation:wa 0.5s ease-in-out infinite 0.13s}
+@keyframes wa{0%,100%{height:3px}50%{height:11px}}
+@keyframes wb2{0%,100%{height:6px}50%{height:14px}}
+
+/* SPECS BAR */
+.spec-bar{position:absolute;bottom:0;left:0;right:0;z-index:10;
+  display:flex;background:rgba(5,5,8,0.95);border-top:1px solid rgba(255,255,255,0.06);
+  backdrop-filter:blur(10px);}
+.sp{flex:1;padding:10px 12px;border-right:1px solid rgba(255,255,255,0.04)}
+.sp:last-child{border:none}
+.spk{font-size:8px;letter-spacing:2px;color:rgba(255,255,255,0.2);text-transform:uppercase;
+  font-family:'Barlow Condensed',sans-serif;margin-bottom:2px}
+.spv{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;
+  color:#fff;letter-spacing:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* CONFIG PANEL */
+.cpanel{background:#0D0D10;border-left:1px solid rgba(255,255,255,0.06);
+  display:flex;flex-direction:column;overflow-y:auto;
+  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.08) transparent;}
+.cp-head{padding:20px 20px 14px;background:rgba(5,5,8,0.96);
+  border-bottom:1px solid rgba(255,255,255,0.04);
+  position:sticky;top:0;z-index:20;backdrop-filter:blur(10px);}
+.cp-eye{font-size:9px;letter-spacing:5px;color:rgba(255,255,255,0.2);text-transform:uppercase;font-family:'Barlow Condensed',sans-serif}
+.cp-title{font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:700;color:#fff;letter-spacing:1px;margin-top:4px;line-height:1.1}
+.cp-brand{color:#fff}
+.cp-price{font-family:'Barlow Condensed',sans-serif;font-size:25px;font-weight:900;color:#fff;margin-top:7px}
+.cp-del{font-size:9px;color:rgba(255,255,255,0.18);letter-spacing:1px;margin-top:3px;font-family:'Barlow Condensed',sans-serif}
+
+.step{border-bottom:1px solid rgba(255,255,255,0.04)}
+.shd{display:flex;align-items:center;gap:10px;padding:14px 18px;cursor:pointer;transition:background 0.15s;user-select:none}
+.shd:hover{background:rgba(255,255,255,0.02)}.step.on .shd{background:rgba(255,255,255,0.04)}
+.snum{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,0.14);min-width:16px}
+.step.on .snum{color:#fff}
+.stit{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:rgba(238,234,224,0.3);flex:1}
+.step.on .stit{color:#fff}
+.scur{font-size:9px;color:rgba(255,255,255,0.38);max-width:82px;text-align:right;line-height:1.3}
+.sarr{font-size:7px;color:rgba(255,255,255,0.1);transition:transform 0.22s;margin-left:2px}
+.step.on .sarr{transform:rotate(180deg);color:rgba(255,255,255,0.3)}
+.sbody{max-height:0;overflow:hidden;transition:max-height 0.35s ease}
+.step.on .sbody{max-height:600px;padding-bottom:12px}
+
+.olist{display:flex;flex-direction:column;gap:5px;padding:8px 14px 0}
+.oi{display:flex;align-items:center;gap:11px;padding:9px 10px;
+  border:1px solid rgba(255,255,255,0.05);cursor:pointer;transition:all 0.18s;background:rgba(255,255,255,0.01);}
+.oi:hover{border-color:rgba(255,255,255,0.18);background:rgba(255,255,255,0.03)}
+.oi.on{border-color:rgba(255,255,255,0.65);background:rgba(255,255,255,0.07)}
+.oi-th{width:56px;height:38px;flex-shrink:0;overflow:hidden;background:#09090C;display:flex;align-items:center;justify-content:center;border-radius:1px}
+.oi-body{flex:1}
+.oi-name{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:rgba(238,234,224,0.36)}
+.oi.on .oi-name{color:#fff}
+.oi-desc{font-size:9px;color:rgba(238,234,224,0.18);margin-top:1px}
+.oi-p{font-family:'Barlow Condensed',sans-serif;font-size:10px;color:rgba(255,255,255,0.26);flex-shrink:0}
+.oi.on .oi-p{color:#fff}
+.oichk{width:12px;height:12px;border-radius:50%;border:1px solid rgba(255,255,255,0.16);flex-shrink:0;transition:all 0.18s}
+.oi.on .oichk{background:#fff;border-color:#fff}
+
+.sw-area{padding:7px 14px 0}
+.sw-row{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:7px}
+.sw{width:24px;height:24px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all 0.18s;flex-shrink:0}
+.sw:hover{transform:scale(1.2)}.sw.on{border-color:#fff;transform:scale(1.2);box-shadow:0 0 0 3px rgba(255,255,255,0.16)}
+.sw-lab{font-family:'Barlow Condensed',sans-serif;font-size:9px;letter-spacing:2px;color:rgba(255,255,255,0.28)}
+
+.sx{display:none;padding:7px 14px 0}
+.sx-lbl{font-family:'Barlow Condensed',sans-serif;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,0.24);margin-bottom:6px}
+.sx-row{display:flex;flex-wrap:wrap;gap:5px}
+.scb{display:flex;align-items:center;gap:6px;padding:5px 9px;border:1px solid rgba(255,255,255,0.06);cursor:pointer;transition:all 0.18s;background:rgba(255,255,255,0.01)}
+.scb:hover{border-color:rgba(255,255,255,0.2)}.scb.on{border-color:rgba(255,255,255,0.6);background:rgba(255,255,255,0.06)}
+.scb-dot{width:10px;height:10px;border-radius:50%}
+.scb-n{font-family:'Barlow Condensed',sans-serif;font-size:9px;letter-spacing:1px;color:rgba(238,234,224,0.32)}
+.scb.on .scb-n{color:#fff}
+
+.cfoot{margin-top:auto;padding:14px 16px;border-top:1px solid rgba(255,255,255,0.07);background:rgba(4,4,6,0.97);position:sticky;bottom:0}
+.cfsum{font-size:9px;letter-spacing:1px;line-height:2;color:rgba(255,255,255,0.22);margin-bottom:10px;font-family:'Barlow Condensed',sans-serif}
+.cfsum strong{color:rgba(255,255,255,0.52)}
+.cfbtns{display:flex;gap:7px}
+.cfback{padding:12px 14px;border:1px solid rgba(255,255,255,0.14);background:transparent;color:rgba(255,255,255,0.38);font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;cursor:pointer;transition:all 0.18s}
+.cfback:hover{color:#fff;border-color:rgba(255,255,255,0.4)}
+.cfatc{flex:1;padding:12px;border:none;background:#fff;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:900;letter-spacing:5px;text-transform:uppercase;color:#09090C;cursor:pointer;transition:all 0.2s}
+.cfatc:hover{background:#EEEAE0}.cfatc:active{transform:scale(0.97)}
+.cfatc.done{background:#1a1a1a;color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.18)}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-logo" onclick="go(1)">
+    <img src="data:image/png;base64,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AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf/Z" height="36" alt="Cafony">
+  </div>
+  <div class="nav-steps">
+    <span class="ns on" id="ns1" onclick="go(1)">01 &nbsp;Fahrzeug</span>
+    <span class="nav-sep">›</span>
+    <span class="ns" id="ns2">02 &nbsp;Konfiguration</span>
+    <span class="nav-sep">›</span>
+    <span class="ns" id="ns3">03 &nbsp;Warenkorb</span>
+  </div>
+  <div class="nav-price" id="navP">ab € 1.290</div>
+</nav>
+
+<!-- S1 -->
+<div class="scr on" id="s1">
+<div class="s1-inner">
+  <div class="s1-hero">
+    <div class="s1-hero-glow"></div>
+    <div class="s1-tag">3D Konfigurator · Handgefertigt Deutschland</div>
+    <div class="s1-h">Wähle<br>dein<br><em>Fahrzeug</em></div>
+    <p class="s1-p">Konfiguriere dein Cafony-Lenkrad in Echtzeit — 3D, drehbar, jedes Detail anpassbar.</p>
+    <div class="s1-pills">
+      <span class="pill">Handgefertigt DE</span>
+      <span class="pill">3D Live-Konfigurator</span>
+      <span class="pill">Carbon · Alcantara · LED</span>
+      <span class="pill">4–6 Wochen</span>
+    </div>
+  </div>
+  <div class="mq"><div class="mq-i" id="mqI"></div></div>
+  <div class="fbar">
+    <button class="fb on" onclick="filt('all',this)">Alle</button>
+    <button class="fb" onclick="filt('de',this)">Deutsch</button>
+    <button class="fb" onclick="filt('it',this)">Italienisch</button>
+    <button class="fb" onclick="filt('gb',this)">Britisch</button>
+    <button class="fb" onclick="filt('jp',this)">Japanisch</button>
+    <button class="fb" onclick="filt('us',this)">Amerikanisch</button>
+    <button class="fb" onclick="filt('kr',this)">Koreanisch</button>
+  </div>
+  <div class="bgrid" id="bgrid"></div>
+  <div class="s1-cta"><button class="s1-btn" id="s1btn" onclick="go(2)">Weiter zur 3D-Konfiguration →</button></div>
+</div>
+</div>
+
+<!-- S2 -->
+<div class="scr" id="s2">
+  <div class="cfg-layout">
+    <div class="canvas-wrap">
+      <canvas id="threeCanvas"></canvas>
+
+      <div class="hud-brand">
+        <div class="hb-logo" id="hbLogo"></div>
+        <div><div class="hb-name" id="hbName">–</div><div class="hb-model" id="hbModel">–</div></div>
+      </div>
+      <div class="hud-live"><div class="hld"></div>3D Live</div>
+
+      <div class="hud-views">
+        <button class="vbtn on" onclick="camView('front',this)">Vorne</button>
+        <button class="vbtn" onclick="camView('angle',this)">Schräg</button>
+        <button class="vbtn" onclick="camView('top',this)">Oben</button>
+        <button class="vbtn" onclick="camView('side',this)">Seite</button>
+        <button class="vbtn" onclick="camView('detail',this)">Hub</button>
+      </div>
+
+      <div class="drag-hint"><span class="drag-icon">⟳</span>Drehen · Scrollen zum Zoomen</div>
+
+      <div class="toast" id="toast">
+        <div class="wv"><div class="wb"></div><div class="wb"></div><div class="wb"></div><div class="wb"></div><div class="wb"></div></div>
+        <span id="toastTxt">–</span>
+      </div>
+
+      <div class="spec-bar">
+        <div class="sp"><div class="spk">Marke</div><div class="spv" id="sp0">–</div></div>
+        <div class="sp"><div class="spk">LED</div><div class="spv" id="sp1">Keine</div></div>
+        <div class="sp"><div class="spk">Carbon</div><div class="spv" id="sp2">Glanz</div></div>
+        <div class="sp"><div class="spk">Material</div><div class="spv" id="sp3">Leder</div></div>
+        <div class="sp"><div class="spk">Naht</div><div class="spv" id="sp4">Gold</div></div>
+      </div>
+    </div>
+
+    <div class="cpanel">
+      <div class="cp-head">
+        <div class="cp-eye">Konfiguration · Schritt 2 von 3</div>
+        <div class="cp-title"><span class="cp-brand" id="cpBr">Marke</span> Lenkrad</div>
+        <div class="cp-price" id="cpPr">€ 1.290</div>
+        <div class="cp-del">Handgefertigt · Deutschland · 4–6 Wochen</div>
+      </div>
+
+      <div class="step on" id="st1">
+        <div class="shd" onclick="tog('st1')"><span class="snum">01</span><span class="stit">LED Schaltanzeige</span><span class="scur" id="sc1">Keine</span><span class="sarr">▼</span></div>
+        <div class="sbody"><div class="olist">
+          <div class="oi on" data-g="led" data-v="Keine" data-p="0">
+            <div class="oi-th" style="background:#080810"><span style="font-size:13px;color:rgba(255,255,255,0.06)">—</span></div>
+            <div class="oi-body"><div class="oi-name">Keine</div><div class="oi-desc">Ohne LED</div></div>
+            <div class="oi-p">inkl.</div><div class="oichk"></div>
+          </div>
+          <div class="oi" data-g="led" data-v="Gen 1" data-p="180">
+            <div class="oi-th" style="background:#080810;gap:3px">
+              <div style="width:5px;height:5px;border-radius:50%;background:#22ee66;box-shadow:0 0 5px #22ee66"></div>
+              <div style="width:5px;height:5px;border-radius:50%;background:#eebb22;box-shadow:0 0 5px #eebb22"></div>
+              <div style="width:5px;height:5px;border-radius:50%;background:#ee3333;box-shadow:0 0 5px #ee3333"></div>
+            </div>
+            <div class="oi-body"><div class="oi-name">Gen 1 · Linear</div><div class="oi-desc">8 LEDs, gerade Reihe</div></div>
+            <div class="oi-p">+ 180 €</div><div class="oichk"></div>
+          </div>
+          <div class="oi" data-g="led" data-v="Gen 2" data-p="280">
+            <div class="oi-th" style="background:#080810;align-items:flex-end;padding-bottom:4px">
+              <svg width="46" height="17" viewBox="0 0 46 17"><path d="M3 13 Q23 4 43 13" fill="none" stroke="#1a1a1a" stroke-width="5" stroke-linecap="round"/><circle cx="4" cy="12" r="2" fill="#22ee66"/><circle cx="11" cy="7" r="2" fill="#22ee66"/><circle cx="18" cy="4" r="2" fill="#eebb22"/><circle cx="23" cy="3" r="2" fill="#eebb22"/><circle cx="28" cy="4" r="2" fill="#ee3333"/><circle cx="35" cy="7" r="2" fill="#ee3333"/><circle cx="42" cy="12" r="2" fill="#ee3333"/></svg>
+            </div>
+            <div class="oi-body"><div class="oi-name">Gen 2 · Arc</div><div class="oi-desc">9 LEDs, Bogen</div></div>
+            <div class="oi-p">+ 280 €</div><div class="oichk"></div>
+          </div>
+          <div class="oi" data-g="led" data-v="Gen 3" data-p="420">
+            <div class="oi-th" style="background:#080810">
+              <svg width="48" height="26" viewBox="0 0 48 26"><path d="M3 23 Q12 8 24 5 Q36 8 45 23" fill="none" stroke="#1a1a1a" stroke-width="6" stroke-linecap="round"/><circle cx="4" cy="21" r="2" fill="#22ee66"/><circle cx="9" cy="15" r="2" fill="#22ee66"/><circle cx="15" cy="10" r="2" fill="#22ee66"/><circle cx="21" cy="6" r="2" fill="#eebb22"/><circle cx="24" cy="5" r="2" fill="#eebb22"/><circle cx="27" cy="6" r="2" fill="#ee3333"/><circle cx="33" cy="10" r="2" fill="#ee3333"/><circle cx="39" cy="15" r="2" fill="#ee3333"/><circle cx="44" cy="21" r="2" fill="#ee3333"/></svg>
+            </div>
+            <div class="oi-body"><div class="oi-name">Gen 3 · Full Arc</div><div class="oi-desc">13 LEDs · Premium</div></div>
+            <div class="oi-p">+ 420 €</div><div class="oichk"></div>
+          </div>
+        </div></div>
+      </div>
+
+      <div class="step" id="st2">
+        <div class="shd" onclick="tog('st2')"><span class="snum">02</span><span class="stit">Carbon Art</span><span class="scur" id="sc2">Glanz</span><span class="sarr">▼</span></div>
+        <div class="sbody"><div class="olist">
+          <div class="oi on" data-g="carbon" data-v="Glanz" data-p="0">
+            <div class="oi-th" style="background:repeating-linear-gradient(45deg,#0e0e1e,#0e0e1e 3px,#181830 3px,#181830 6px)"></div>
+            <div class="oi-body"><div class="oi-name">Glanz</div><div class="oi-desc">Hochglanz Twill 2×2</div></div>
+            <div class="oi-p">inkl.</div><div class="oichk"></div>
+          </div>
+          <div class="oi" data-g="carbon" data-v="Matt" data-p="60">
+            <div class="oi-th" style="background:repeating-linear-gradient(45deg,#0a0a14,#0a0a14 3px,#12121e 3px,#12121e 6px)"></div>
+            <div class="oi-body"><div class="oi-name">Matt</div><div class="oi-desc">Seidenmatt, zeitlos</div></div>
+            <div class="oi-p">+ 60 €</div><div class="oichk"></div>
+          </div>
+          <div class="oi" data-g="carbon" data-v="Forged" data-p="120">
+            <div class="oi-th" style="background:radial-gradient(ellipse at 22% 32%,#1c1c32,#0a0a18 58%)"></div>
+            <div class="oi-body"><div class="oi-name">Forged</div><div class="oi-desc">Jedes Stück einmalig</div></div>
+            <div class="oi-p">+ 120 €</div><div class="oichk"></div>
+          </div>
+          <div class="oi" data-g="carbon" data-v="Forged+Pig" data-p="160">
+            <div class="oi-th" style="background:linear-gradient(135deg,#1c0e30,#22163e,#140c26)"></div>
+            <div class="oi-body"><div class="oi-name">Forged + Pigment</div><div class="oi-desc">Farbpigmente eingearbeitet</div></div>
+            <div class="oi-p">+ 160 €</div><div class="oichk"></div>
+          </div>
+        </div></div>
+      </div>
+
+      <div class="step" id="st3">
+        <div class="shd" onclick="tog('st3')"><span class="snum">03</span><span class="stit">Material</span><span class="scur" id="sc3">Leder</span><span class="sarr">▼</span></div>
+        <div class="sbody"><div class="olist">
+          <div class="oi on" data-g="mat" data-v="Leder" data-p="0">
+            <div class="oi-th" style="background:linear-gradient(135deg,#1e1208,#2c1a0c,#16100a)"></div>
+            <div class="oi-body"><div class="oi-name">Leder</div><div class="oi-desc">Nappa-Rindsleder</div></div>
+            <div class="oi-p">inkl.</div><div class="oichk"></div>
+          </div>
+          <div class="oi" data-g="mat" data-v="Perf." data-p="80">
+            <div class="oi-th" style="background:#1e1208;background-image:radial-gradient(rgba(0,0,0,0.7) 1.2px,#1e1208 1.2px);background-size:5px 5px"></div>
+            <div class="oi-body"><div class="oi-name">Leder Perf.</div><div class="oi-desc">Belüftet · Rennsport</div></div>
+            <div class="oi-p">+ 80 €</div><div class="oichk"></div>
+          </div>
+          <div class="oi" data-g="mat" data-v="Alcantara" data-p="150">
+            <div class="oi-th" style="background:repeating-linear-gradient(45deg,#14142a,#14142a 2px,#1c1a34 2px,#1c1a34 4px)"></div>
+            <div class="oi-body"><div class="oi-name">Alcantara</div><div class="oi-desc">Motorsport-Standard</div></div>
+            <div class="oi-p">+ 150 €</div><div class="oichk"></div>
+          </div>
+        </div></div>
+      </div>
+
+      <div class="step" id="st4">
+        <div class="shd" onclick="tog('st4')"><span class="snum">04</span><span class="stit">Nahtfarbe</span><span class="scur" id="sc4">Gold</span><span class="sarr">▼</span></div>
+        <div class="sbody">
+          <div class="sw-area"><div class="sw-row" id="swRow"></div><div class="sw-lab" id="swLbl">Gold · Standard</div></div>
+        </div>
+      </div>
+
+      <div class="step" id="st5">
+        <div class="shd" onclick="tog('st5')"><span class="snum">05</span><span class="stit">12-Uhr Markierung</span><span class="scur" id="sc5">Nein</span><span class="sarr">▼</span></div>
+        <div class="sbody"><div class="olist">
+          <div class="oi on" data-g="stripe" data-v="Nein" data-p="0">
+            <div class="oi-th" style="background:#08080C"></div>
+            <div class="oi-body"><div class="oi-name">Ohne</div><div class="oi-desc">Kein Marker</div></div>
+            <div class="oi-p">inkl.</div><div class="oichk"></div>
+          </div>
+          <div class="oi" data-g="stripe" data-v="Ja" data-p="40">
+            <div class="oi-th" style="background:#08080C;display:flex;align-items:center;justify-content:center">
+              <div style="width:4px;height:26px;background:linear-gradient(180deg,#EEEAE0,#888);border-radius:2px"></div>
+            </div>
+            <div class="oi-body"><div class="oi-name">12-Uhr Stripe</div><div class="oi-desc">Handgemalt · Farbwahl</div></div>
+            <div class="oi-p">+ 40 €</div><div class="oichk"></div>
+          </div>
+        </div>
+        <div class="sx" id="sxWrap">
+          <div class="sx-lbl">Farbe der Markierung</div>
+          <div class="sx-row" id="sxRow"></div>
+        </div>
+        </div>
+      </div>
+
+      <div class="step" id="st6">
+        <div class="shd" onclick="tog('st6')"><span class="snum">06</span><span class="stit">Flat Bottom</span><span class="scur" id="sc6">Nein</span><span class="sarr">▼</span></div>
+        <div class="sbody"><div class="olist">
+          <div class="oi on" data-g="flat" data-v="Nein" data-p="0">
+            <div class="oi-th" style="background:#08080C;display:flex;align-items:center;justify-content:center">
+              <svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="11" fill="none" stroke="#2a2a3e" stroke-width="1.5"/></svg>
+            </div>
+            <div class="oi-body"><div class="oi-name">Standard Rund</div><div class="oi-desc">Originale Form</div></div>
+            <div class="oi-p">inkl.</div><div class="oichk"></div>
+          </div>
+          <div class="oi" data-g="flat" data-v="Ja" data-p="90">
+            <div class="oi-th" style="background:#08080C;display:flex;align-items:center;justify-content:center">
+              <svg width="34" height="24" viewBox="0 0 34 24"><path d="M2 12 A12 12 0 0 1 32 12 L32 20 L2 20Z" fill="none" stroke="#2a2a3e" stroke-width="1.5"/><line x1="2" y1="20" x2="32" y2="20" stroke="#888" stroke-width="1.2"/></svg>
+            </div>
+            <div class="oi-body"><div class="oi-name">Flat Bottom</div><div class="oi-desc">GT-Style · mehr Platz</div></div>
+            <div class="oi-p">+ 90 €</div><div class="oichk"></div>
+          </div>
+        </div></div>
+      </div>
+
+      <div class="step" id="st7">
+        <div class="shd" onclick="tog('st7')"><span class="snum">07</span><span class="stit">Airbagkappe</span><span class="scur" id="sc7">Nein</span><span class="sarr">▼</span></div>
+        <div class="sbody"><div class="olist">
+          <div class="oi on" data-g="airbag" data-v="Nein" data-p="0">
+            <div class="oi-th" style="background:#08080C"></div>
+            <div class="oi-body"><div class="oi-name">Standard Hub</div><div class="oi-desc">Original Nabe</div></div>
+            <div class="oi-p">inkl.</div><div class="oichk"></div>
+          </div>
+          <div class="oi" data-g="airbag" data-v="Ja" data-p="120">
+            <div class="oi-th" style="background:#08080C;display:flex;align-items:center;justify-content:center">
+              <svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="11" fill="#141428" stroke="#555" stroke-width="0.8"/><circle cx="14" cy="14" r="6" fill="#0a0a1e"/><text x="14" y="16.5" text-anchor="middle" font-family="Barlow Condensed,sans-serif" font-size="4" font-weight="800" fill="#aaa" letter-spacing="0.5">CAFONY</text></svg>
+            </div>
+            <div class="oi-body"><div class="oi-name">Cafony Kappe</div><div class="oi-desc">⚠ Nur ohne Airbag!</div></div>
+            <div class="oi-p">+ 120 €</div><div class="oichk"></div>
+          </div>
+        </div></div>
+      </div>
+
+      <div class="cfoot">
+        <div class="cfsum" id="cfSum"><strong>LED:</strong> Keine · <strong>Carbon:</strong> Glanz · <strong>Material:</strong> Leder · <strong>Naht:</strong> Gold</div>
+        <div class="cfbtns">
+          <button class="cfback" onclick="go(1)">← Marke</button>
+          <button class="cfatc" id="atcBtn" onclick="doCart()">In den Warenkorb</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════
+   BRAND DATA
+════════════════════════════════════ */
+var BRANDS=[
+  {id:"bmw",n:"BMW",cat:"de",fit:"M3 · M4 · M5 · 3er · 5er",hub:"BMW M",model:"M3 / M4 / M5",
+   svg:"<circle cx='36' cy='24' r='18' fill='none' stroke='#fff' stroke-width='1.5'/><path d='M36 6 L36 42 M18 24 L54 24' stroke='#fff' stroke-width='1'/><path d='M36 6 L54 24 L36 42 A18 18 0 0 1 36 6Z' fill='rgba(255,255,255,0.1)'/>"},
+  {id:"alfa",n:"Alfa Romeo",cat:"it",fit:"Giulia · Stelvio · GTA",hub:"ALFA",model:"Giulia / Stelvio",
+   svg:"<circle cx='36' cy='24' r='18' fill='none' stroke='#fff' stroke-width='1.5'/><line x1='36' y1='6' x2='36' y2='42' stroke='#fff' stroke-width='1'/><text x='22' y='28' text-anchor='middle' font-size='13' fill='#fff' font-weight='700'>α</text>"},
+  {id:"audi",n:"Audi",cat:"de",fit:"A4 · A6 · RS3 · RS4 · RS5 · R8",hub:"RS",model:"RS3 / RS4 / RS5",
+   svg:"<circle cx='12' cy='24' r='10' fill='none' stroke='#fff' stroke-width='1.5'/><circle cx='24' cy='24' r='10' fill='none' stroke='#fff' stroke-width='1.5'/><circle cx='48' cy='24' r='10' fill='none' stroke='#fff' stroke-width='1.5'/><circle cx='60' cy='24' r='10' fill='none' stroke='#fff' stroke-width='1.5'/>"},
+  {id:"vw",n:"Volkswagen",cat:"de",fit:"Golf GTI · Golf R · Polo GTI",hub:"GTI",model:"Golf GTI / R",
+   svg:"<circle cx='36' cy='24' r='18' fill='none' stroke='#fff' stroke-width='1.5'/><text x='36' y='31' text-anchor='middle' font-family='Barlow Condensed,sans-serif' font-size='18' font-weight='800' fill='#fff'>VW</text>"},
+  {id:"mercedes",n:"Mercedes",cat:"de",fit:"C · E · S · AMG · G-Klasse",hub:"AMG",model:"C63 / AMG GT",
+   svg:"<circle cx='36' cy='24' r='18' fill='none' stroke='#fff' stroke-width='1.5'/><path d='M36 6 L36 24 M36 24 L52 38 M36 24 L20 38' stroke='#fff' stroke-width='1.8' stroke-linecap='round'/>"},
+  {id:"porsche",n:"Porsche",cat:"de",fit:"911 · Cayenne · Macan · Panamera",hub:"PORSCHE",model:"911 / Cayenne",
+   svg:"<path d='M8 24 Q36 4 64 24 Q64 36 36 44 Q8 36 8 24Z' fill='none' stroke='#fff' stroke-width='1.5'/>"},
+  {id:"ferrari",n:"Ferrari",cat:"it",fit:"488 · F8 · Roma · SF90",hub:"FERRARI",model:"488 / F8 / Roma",
+   svg:"<rect x='12' y='8' width='48' height='32' rx='2' fill='none' stroke='#fff' stroke-width='1.5'/><text x='36' y='30' text-anchor='middle' font-size='22' fill='#fff' font-weight='700'>F</text>"},
+  {id:"lamborghini",n:"Lamborghini",cat:"it",fit:"Huracán · Urus · Revuelto",hub:"LAMBO",model:"Huracán / Urus",
+   svg:"<polygon points='36,4 68,44 4,44' fill='none' stroke='#fff' stroke-width='1.5'/>"},
+  {id:"mclaren",n:"McLaren",cat:"gb",fit:"720S · 570S · GT · Artura",hub:"McLaren",model:"720S / Artura",
+   svg:"<ellipse cx='36' cy='24' rx='28' ry='18' fill='none' stroke='#fff' stroke-width='1.5'/>"},
+  {id:"bentley",n:"Bentley",cat:"gb",fit:"Continental GT · Flying Spur",hub:"BENTLEY",model:"Continental GT",
+   svg:"<circle cx='36' cy='24' r='18' fill='none' stroke='#fff' stroke-width='1.5'/>"},
+  {id:"toyota",n:"Toyota GR",cat:"jp",fit:"GR86 · GR Supra · Yaris GR",hub:"GR",model:"GR86 / Supra",
+   svg:"<ellipse cx='36' cy='24' rx='26' ry='16' fill='none' stroke='#fff' stroke-width='1.5'/>"},
+  {id:"hyundai",n:"Hyundai N",cat:"kr",fit:"i30 N · Elantra N · i20 N",hub:"N",model:"i30 N / Elantra N",
+   svg:"<circle cx='36' cy='24' r='18' fill='none' stroke='#fff' stroke-width='1.5'/><text x='36' y='32' text-anchor='middle' font-family='Barlow Condensed,sans-serif' font-size='24' font-weight='900' fill='#fff'>N</text>"},
+  {id:"dodge",n:"Dodge",cat:"us",fit:"Challenger · Charger · Durango",hub:"DODGE",model:"Challenger / Charger",
+   svg:"<path d='M10 10 L52 10 L62 24 L52 38 L10 38 Z' fill='none' stroke='#fff' stroke-width='1.5'/>"},
+  {id:"chevrolet",n:"Chevrolet",cat:"us",fit:"Camaro SS · ZL1 · Corvette C8",hub:"CAMARO",model:"Camaro SS / ZL1",
+   svg:"<path d='M8 18 L26 18 L26 12 L46 12 L46 18 L64 18 L64 30 L46 30 L46 36 L26 36 L26 30 L8 30 Z' fill='none' stroke='#fff' stroke-width='1.5'/>"},
+  {id:"ford",n:"Ford",cat:"us",fit:"Mustang · Shelby · Focus RS",hub:"MUSTANG",model:"Mustang / Shelby",
+   svg:"<ellipse cx='36' cy='24' rx='28' ry='18' fill='none' stroke='#fff' stroke-width='1.5'/>"},
+];
+
+var BASE=1290,SEL=null;
+var DP={led:{"Keine":0,"Gen 1":180,"Gen 2":280,"Gen 3":420},carbon:{"Glanz":0,"Matt":60,"Forged":120,"Forged+Pig":160},mat:{"Leder":0,"Perf.":80,"Alcantara":150},stripe:{"Nein":0,"Ja":40},flat:{"Nein":0,"Ja":90},airbag:{"Nein":0,"Ja":120}};
+var CFG={led:"Keine",carbon:"Glanz",mat:"Leder",stitch:{n:"Gold",c:0xC8A84B},stripe:"Nein",stripeCol:{n:"Weiß",c:"#EEEAE0"},flat:"Nein",airbag:"Nein"};
+var SCOLORS=[{n:"Gold",c:"#C8A84B",hex:0xC8A84B},{n:"Rot",c:"#CC2828",hex:0xCC2828},{n:"Blau",c:"#1A58CC",hex:0x1A58CC},{n:"Weiß",c:"#EEEAE0",hex:0xEEEAE0},{n:"Grün",c:"#1A9040",hex:0x1A9040},{n:"Orange",c:"#CC5810",hex:0xCC5810},{n:"Schwarz",c:"#222",hex:0x222222},{n:"Silber",c:"#909AAA",hex:0x909AAA},{n:"Lila",c:"#7030AA",hex:0x7030AA},{n:"Türkis",c:"#0A8898",hex:0x0A8898},{n:"Gelb",c:"#C8A810",hex:0xC8A810},{n:"Pink",c:"#CC2880",hex:0xCC2880}];
+var SXCOLORS=[{n:"Weiß",c:"#EEEAE0"},{n:"Gold",c:"#C8A84B"},{n:"Rot",c:"#CC2828"},{n:"Blau",c:"#1A58CC"},{n:"Grün",c:"#1A9040"},{n:"Orange",c:"#CC5810"},{n:"Gelb",c:"#F0D040"},{n:"Pink",c:"#CC2880"},{n:"Carbon",c:"#222"}];
+
+/* ════════════════════════════════════
+   THREE.JS 3D WHEEL ENGINE
+════════════════════════════════════ */
+var scene,camera,renderer,wheel,parts={},animId;
+var isAnimating=true;
+var mouse={x:0,y:0,down:false,lastX:0,lastY:0};
+var autoRot={x:0.008,y:0};
+var camTarget={x:0,y:0,z:4.2};
+var camCurrent={x:0,y:0,z:4.2};
+
+function initThree(){
+  var canvas=document.getElementById("threeCanvas");
+  var wrap=canvas.parentElement;
+  var W=wrap.clientWidth,H=wrap.clientHeight;
+
+  scene=new THREE.Scene();
+  scene.background=new THREE.Color(0x0C0C10);
+  scene.fog=new THREE.FogExp2(0x0C0C10,0.08);
+
+  camera=new THREE.PerspectiveCamera(42,W/H,0.1,100);
+  camera.position.set(0,0.8,4.2);
+  camera.lookAt(0,0,0);
+
+  renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true,alpha:false});
+  renderer.setSize(W,H);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  renderer.shadowMap.enabled=true;
+  renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  renderer.outputEncoding=THREE.sRGBEncoding;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure=1.2;
+
+  /* LIGHTS */
+  var amb=new THREE.AmbientLight(0xffffff,0.4);scene.add(amb);
+  var key=new THREE.DirectionalLight(0xffffff,1.8);
+  key.position.set(3,5,4);key.castShadow=true;
+  key.shadow.mapSize.width=2048;key.shadow.mapSize.height=2048;
+  scene.add(key);
+  var fill=new THREE.DirectionalLight(0x8888ff,0.5);
+  fill.position.set(-4,2,-3);scene.add(fill);
+  var rim=new THREE.DirectionalLight(0xffffff,0.8);
+  rim.position.set(0,-3,2);scene.add(rim);
+  var point1=new THREE.PointLight(0xffffff,0.6,8);
+  point1.position.set(-2,2,2);scene.add(point1);
+  var point2=new THREE.PointLight(0x4466ff,0.3,6);
+  point2.position.set(2,-2,-2);scene.add(point2);
+
+  /* FLOOR REFLECTION */
+  var floor=new THREE.Mesh(
+    new THREE.PlaneGeometry(20,20),
+    new THREE.MeshStandardMaterial({color:0x0a0a10,metalness:0.3,roughness:0.9})
+  );
+  floor.rotation.x=-Math.PI/2;floor.position.y=-2.2;
+  floor.receiveShadow=true;scene.add(floor);
+
+  buildWheel();
+  setupControls();
+  resize();
+  window.addEventListener("resize",resize);
+  animate();
+}
+
+function buildWheel(){
+  wheel=new THREE.Group();
+  scene.add(wheel);
+
+  /* MATERIALS */
+  var rimMat=new THREE.MeshStandardMaterial({
+    color:0x141420,metalness:0.85,roughness:0.15,
+    envMapIntensity:1.2
+  });
+  var spokeMat=new THREE.MeshStandardMaterial({
+    color:0x1a1a28,metalness:0.9,roughness:0.1
+  });
+  var gripMat=new THREE.MeshStandardMaterial({
+    color:0x1e1208,metalness:0.0,roughness:0.85
+  });
+  var carbonMat=new THREE.MeshStandardMaterial({
+    color:0x141428,metalness:0.3,roughness:0.2
+  });
+  var chromeMat=new THREE.MeshStandardMaterial({
+    color:0xc0c8d8,metalness:1.0,roughness:0.05
+  });
+  var hubMat=new THREE.MeshStandardMaterial({
+    color:0x0e0e1a,metalness:0.7,roughness:0.3
+  });
+  var stitchMat=new THREE.MeshStandardMaterial({
+    color:0xC8A84B,metalness:0.1,roughness:0.6,emissive:0xC8A84B,emissiveIntensity:0.08
+  });
+
+  /* ── OUTER RIM RING ── */
+  var rimGeo=new THREE.TorusGeometry(1.6,0.18,32,120);
+  var rimMesh=new THREE.Mesh(rimGeo,rimMat);
+  rimMesh.castShadow=true;rimMesh.receiveShadow=true;
+  wheel.add(rimMesh);parts.rim=rimMesh;
+
+  /* ── GRIP SECTIONS ── (leather/alcantara) */
+  var gripGeo=new THREE.TorusGeometry(1.6,0.165,32,120);
+  var gripMesh=new THREE.Mesh(gripGeo,gripMat);
+  gripMesh.castShadow=true;
+  wheel.add(gripMesh);parts.grip=gripMesh;
+
+  /* ── SPOKES — 3 spoke design ── */
+  var spokeGeos=[
+    // Top spoke (vertical, from hub to rim top)
+    {pos:[0,1.0,0],rot:[0,0,0],scale:[0.12,0.62,0.12]},
+    // Bottom-left spoke
+    {pos:[-0.88,-0.52,0],rot:[0,0,Math.PI/3*2],scale:[0.12,0.62,0.12]},
+    // Bottom-right spoke
+    {pos:[0.88,-0.52,0],rot:[0,0,-Math.PI/3*2],scale:[0.12,0.62,0.12]},
+  ];
+  parts.spokes=[];
+  spokeGeos.forEach(function(s){
+    var sg=new THREE.CylinderGeometry(0.5,0.5,1,16,1);
+    var sm=new THREE.Mesh(sg,spokeMat);
+    sm.position.set(s.pos[0],s.pos[1],s.pos[2]);
+    sm.rotation.set(s.rot[0],s.rot[1],s.rot[2]);
+    sm.scale.set(s.scale[0],s.scale[1],s.scale[2]);
+    sm.castShadow=true;
+    wheel.add(sm);parts.spokes.push(sm);
+  });
+
+  /* ── CARBON INSERTS on spokes ── */
+  parts.carbonInserts=[];
+  spokeGeos.forEach(function(s){
+    var cg=new THREE.BoxGeometry(0.08,0.45,0.04);
+    var cm=new THREE.Mesh(cg,carbonMat);
+    cm.position.set(s.pos[0]*0.85,s.pos[1]*0.85,0.07);
+    cm.rotation.set(s.rot[0],s.rot[1],s.rot[2]);
+    cm.castShadow=true;
+    wheel.add(cm);parts.carbonInserts.push(cm);
+  });
+
+  /* ── PADDLE SHIFTERS ── */
+  var padGeo=new THREE.BoxGeometry(0.4,0.22,0.04);
+  var padR=new THREE.Mesh(padGeo,chromeMat);
+  padR.position.set(1.0,-0.15,0.15);padR.rotation.z=-0.15;
+  padR.castShadow=true;wheel.add(padR);parts.padR=padR;
+  var padL=new THREE.Mesh(padGeo,chromeMat);
+  padL.position.set(-1.0,-0.15,0.15);padL.rotation.z=0.15;
+  padL.castShadow=true;wheel.add(padL);parts.padL=padL;
+
+  /* Paddle detail */
+  var padDetailGeo=new THREE.BoxGeometry(0.38,0.06,0.03);
+  [padR,padL].forEach(function(p,i){
+    var pd=new THREE.Mesh(padDetailGeo,spokeMat);
+    pd.position.set(0,0.06,0.025);pd.castShadow=true;
+    p.add(pd);
+  });
+
+  /* ── CENTER HUB ── */
+  var hubBodyGeo=new THREE.CylinderGeometry(0.52,0.52,0.1,32);
+  var hubBody=new THREE.Mesh(hubBodyGeo,hubMat);
+  hubBody.rotation.x=Math.PI/2;hubBody.position.z=0.05;
+  hubBody.castShadow=true;wheel.add(hubBody);parts.hub=hubBody;
+
+  /* Hub ring chrome */
+  var hubRingGeo=new THREE.TorusGeometry(0.5,0.025,12,60);
+  var hubRing=new THREE.Mesh(hubRingGeo,chromeMat);
+  hubRing.castShadow=true;wheel.add(hubRing);parts.hubRing=hubRing;
+
+  /* Hub inner face */
+  var hubFaceGeo=new THREE.CircleGeometry(0.44,32);
+  var hubFace=new THREE.Mesh(hubFaceGeo,new THREE.MeshStandardMaterial({color:0x0a0a16,metalness:0.5,roughness:0.5}));
+  hubFace.position.z=0.08;
+  wheel.add(hubFace);
+
+  /* Hub logo text — using a torus ring as logo placeholder */
+  var logoRingGeo=new THREE.TorusGeometry(0.22,0.015,8,40);
+  var logoRing=new THREE.Mesh(logoRingGeo,new THREE.MeshStandardMaterial({color:0xffffff,metalness:0.8,roughness:0.2,emissive:0xffffff,emissiveIntensity:0.1}));
+  logoRing.position.z=0.09;wheel.add(logoRing);parts.logoRing=logoRing;
+
+  /* ── STITCHING LINES ── */
+  parts.stitching=[];
+  var stitchAngles=[Math.PI/2, Math.PI/4, Math.PI*3/4, -Math.PI/4, -Math.PI*3/4, -Math.PI/2, Math.PI, 0];
+  stitchAngles.forEach(function(angle){
+    var sg=new THREE.TorusGeometry(1.6,0.004,4,8,0.2);
+    var sm=new THREE.Mesh(sg,stitchMat);
+    sm.rotation.z=angle;
+    wheel.add(sm);parts.stitching.push(sm);
+  });
+
+  /* ── LED STRIP (hidden) ── */
+  var ledGroup=new THREE.Group();
+  var ledHousingGeo=new THREE.TorusGeometry(1.62,0.04,8,60,Math.PI);
+  var ledHousing=new THREE.Mesh(ledHousingGeo,new THREE.MeshStandardMaterial({color:0x0a0a14,metalness:0.5,roughness:0.5}));
+  ledHousing.rotation.z=Math.PI/2;
+  ledGroup.add(ledHousing);
+  /* LED dots */
+  var ledColors=[0x22ee66,0x22ee66,0x22ee66,0xeebb22,0xeebb22,0xeebb22,0xeebb22,0xee3333,0xee3333,0xee3333,0xee3333];
+  for(var i=0;i<11;i++){
+    var t=(i/10)*Math.PI;
+    var lx=Math.cos(Math.PI/2-t)*1.62;
+    var ly=Math.sin(Math.PI/2-t)*1.62;
+    var ledGeo=new THREE.SphereGeometry(0.028,8,8);
+    var ledM=new THREE.MeshStandardMaterial({
+      color:ledColors[i],emissive:ledColors[i],emissiveIntensity:1.5,roughness:0.3,metalness:0.1
+    });
+    var led=new THREE.Mesh(ledGeo,ledM);
+    led.position.set(lx,ly,0.05);
+    ledGroup.add(led);
+  }
+  ledGroup.visible=false;
+  wheel.add(ledGroup);parts.ledGroup=ledGroup;
+
+  /* ── 12 O CLOCK STRIPE ── */
+  var stripeGeo=new THREE.BoxGeometry(0.06,0.35,0.02);
+  var stripeMesh=new THREE.Mesh(stripeGeo,new THREE.MeshStandardMaterial({color:0xEEEAE0,metalness:0.1,roughness:0.5,emissive:0xEEEAE0,emissiveIntensity:0.05}));
+  stripeMesh.position.set(0,1.82,0.2);
+  stripeMesh.visible=false;
+  wheel.add(stripeMesh);parts.stripe=stripeMesh;
+
+  /* ── AIRBAG CAP (alternative hub) ── */
+  var capGeo=new THREE.CylinderGeometry(0.5,0.5,0.12,32);
+  var capMesh=new THREE.Mesh(capGeo,new THREE.MeshStandardMaterial({color:0x141428,metalness:0.6,roughness:0.4}));
+  capMesh.rotation.x=Math.PI/2;capMesh.position.z=0.06;
+  capMesh.visible=false;
+  wheel.add(capMesh);parts.cap=capMesh;
+
+  /* ── FLAT BOTTOM MASK ── */
+  /* We handle this by scaling the rim geometry bottom */
+  wheel.rotation.x=0.18;
+  wheel.rotation.y=-0.3;
+}
+
+function setupControls(){
+  var canvas=document.getElementById("threeCanvas");
+  /* DRAG ROTATE */
+  canvas.addEventListener("mousedown",function(e){mouse.down=true;mouse.lastX=e.clientX;mouse.lastY=e.clientY;isAnimating=false;});
+  window.addEventListener("mousemove",function(e){
+    if(!mouse.down) return;
+    var dx=e.clientX-mouse.lastX,dy=e.clientY-mouse.lastY;
+    mouse.lastX=e.clientX;mouse.lastY=e.clientY;
+    wheel.rotation.y+=dx*0.008;
+    wheel.rotation.x+=dy*0.005;
+    wheel.rotation.x=Math.max(-1.2,Math.min(1.2,wheel.rotation.x));
+  });
+  window.addEventListener("mouseup",function(){mouse.down=false;setTimeout(function(){isAnimating=true;},1500);});
+  /* TOUCH */
+  canvas.addEventListener("touchstart",function(e){mouse.down=true;mouse.lastX=e.touches[0].clientX;mouse.lastY=e.touches[0].clientY;isAnimating=false;},{passive:true});
+  window.addEventListener("touchmove",function(e){
+    if(!mouse.down) return;
+    var dx=e.touches[0].clientX-mouse.lastX,dy=e.touches[0].clientY-mouse.lastY;
+    mouse.lastX=e.touches[0].clientX;mouse.lastY=e.touches[0].clientY;
+    wheel.rotation.y+=dx*0.008;wheel.rotation.x+=dy*0.005;
+  },{passive:true});
+  window.addEventListener("touchend",function(){mouse.down=false;setTimeout(function(){isAnimating=true;},1500);});
+  /* SCROLL ZOOM */
+  canvas.addEventListener("wheel",function(e){
+    e.preventDefault();
+    camTarget.z=Math.max(1.8,Math.min(7,camTarget.z+e.deltaY*0.005));
+  },{passive:false});
+  /* PINCH ZOOM */
+  var lastPinch=null;
+  canvas.addEventListener("touchstart",function(e){if(e.touches.length===2) lastPinch=null;},{passive:true});
+  window.addEventListener("touchmove",function(e){
+    if(e.touches.length===2){
+      var d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+      if(lastPinch!==null) camTarget.z=Math.max(1.8,Math.min(7,camTarget.z-(d-lastPinch)*0.008));
+      lastPinch=d;
+    }
+  },{passive:true});
+}
+
+function animate(){
+  animId=requestAnimationFrame(animate);
+  /* Smooth auto rotation */
+  if(isAnimating&&!mouse.down){
+    wheel.rotation.y+=0.004;
+  }
+  /* Smooth camera zoom */
+  camCurrent.z+=(camTarget.z-camCurrent.z)*0.06;
+  camera.position.z=camCurrent.z;
+  renderer.render(scene,camera);
+}
+
+function resize(){
+  if(!renderer) return;
+  var wrap=document.getElementById("threeCanvas").parentElement;
+  var W=wrap.clientWidth,H=wrap.clientHeight;
+  renderer.setSize(W,H);
+  camera.aspect=W/H;camera.updateProjectionMatrix();
+}
+
+/* CAMERA VIEWS */
+var CAM_VIEWS={
+  front:  {px:0,py:0.8,pz:4.2,rx:0.18,ry:-0.3},
+  angle:  {px:1.5,py:1.2,pz:3.5,rx:0.3,ry:0.4},
+  top:    {px:0,py:4.5,pz:0.5,rx:1.4,ry:0},
+  side:   {px:4.0,py:0.5,pz:0.5,rx:0.1,ry:1.5},
+  detail: {px:0,py:0,pz:2.0,rx:0,ry:0},
+};
+function camView(v,btn){
+  document.querySelectorAll(".vbtn").forEach(function(b){b.classList.remove("on")});
+  btn.classList.add("on");
+  var cv=CAM_VIEWS[v];
+  if(!cv) return;
+  isAnimating=false;
+  /* Animate camera */
+  var t=0,dur=60;
+  var sx=camera.position.x,sy=camera.position.y,sz=camera.position.z;
+  var srx=wheel.rotation.x,sry=wheel.rotation.y;
+  var ti=setInterval(function(){
+    t++;var p=t/dur,ep=1-(1-p)*(1-p);
+    camera.position.x=sx+(cv.px-sx)*ep;
+    camera.position.y=sy+(cv.py-sy)*ep;
+    camera.position.z=sz+(cv.pz-sz)*ep;
+    wheel.rotation.x=srx+(cv.rx-srx)*ep;
+    wheel.rotation.y=sry+(cv.ry-sry)*ep;
+    camera.lookAt(0,0,0);
+    if(t>=dur){clearInterval(ti);if(v==="front") isAnimating=true;}
+  },16);
+  camTarget.z=cv.pz;
+}
+
+/* APPLY OPTION TO 3D WHEEL */
+function apply3D(g,v){
+  var CARBON_COLORS={
+    "Glanz":  {color:0x141428,metalness:0.3,roughness:0.18},
+    "Matt":   {color:0x0e0e1a,metalness:0.15,roughness:0.45},
+    "Forged": {color:0x181830,metalness:0.25,roughness:0.3},
+    "Forged+Pig":{color:0x200e38,metalness:0.2,roughness:0.25},
+  };
+  var GRIP_COLORS={
+    "Leder":    {color:0x1e1208,metalness:0.0,roughness:0.85},
+    "Perf.":    {color:0x1a1006,metalness:0.0,roughness:0.9},
+    "Alcantara":{color:0x14122a,metalness:0.0,roughness:0.95},
+  };
+
+  if(g==="carbon"&&CARBON_COLORS[v]){
+    var c=CARBON_COLORS[v];
+    parts.carbonInserts.forEach(function(ci){
+      ci.material.color.setHex(c.color);
+      ci.material.metalness=c.metalness;
+      ci.material.roughness=c.roughness;
+      ci.material.needsUpdate=true;
+    });
+    pulseParts(parts.carbonInserts);
+  }
+  if(g==="mat"&&GRIP_COLORS[v]){
+    var gc=GRIP_COLORS[v];
+    parts.grip.material.color.setHex(gc.color);
+    parts.grip.material.metalness=gc.metalness;
+    parts.grip.material.roughness=gc.roughness;
+    parts.grip.material.needsUpdate=true;
+    pulseParts([parts.grip]);
+  }
+  if(g==="led"){
+    parts.ledGroup.visible=(v!=="Keine");
+    if(v!=="Keine") pulseParts([parts.ledGroup]);
+  }
+  if(g==="stripe"){
+    parts.stripe.visible=(v==="Ja");
+    if(v==="Ja") pulseParts([parts.stripe]);
+  }
+  if(g==="flat"){
+    /* Flat bottom: scale wheel Y on the bottom half */
+    if(v==="Ja"){
+      wheel.scale.y=0.88;wheel.position.y=0.12;
+    } else {
+      wheel.scale.y=1;wheel.position.y=0;
+    }
+    pulseParts([parts.rim]);
+  }
+  if(g==="airbag"){
+    parts.hub.visible=(v==="Nein");
+    parts.hubRing.visible=(v==="Nein");
+    parts.logoRing.visible=(v==="Nein");
+    parts.cap.visible=(v==="Ja");
+    pulseParts([parts.hub,parts.cap]);
+  }
+}
+
+function pulseParts(meshes){
+  var t=0;
+  var ti=setInterval(function(){
+    t+=0.15;
+    var s=1+Math.sin(t)*0.04;
+    meshes.forEach(function(m){if(m&&m.scale) m.scale.setScalar(s);});
+    if(t>Math.PI*2){
+      meshes.forEach(function(m){if(m&&m.scale) m.scale.setScalar(1);});
+      clearInterval(ti);
+    }
+  },16);
+}
+
+/* STITCH COLOR UPDATE */
+function updateStitchColor3D(hex){
+  parts.stitching.forEach(function(s){
+    s.material.color.setHex(hex);
+    s.material.emissive.setHex(hex);
+    s.material.needsUpdate=true;
+  });
+  parts.stripe.material.color.setHex(hex);
+  parts.stripe.material.emissive.setHex(hex);
+}
+
+/* STRIPE COLOR */
+function updateStripeColor3D(hexStr){
+  var hex=parseInt(hexStr.replace("#",""),16);
+  parts.stripe.material.color.setHex(hex);
+  parts.stripe.material.emissive.setHex(hex);
+}
+
+/* ════════════════════════════════════
+   UI LOGIC
+════════════════════════════════════ */
+window.addEventListener("load",function(){
+  buildBrands();buildMarquee();buildSwatches();buildStripeColors();initOpts();
+});
+
+function buildBrands(){
+  var g=document.getElementById("bgrid");
+  BRANDS.forEach(function(b){
+    var d=document.createElement("div");
+    d.className="bc";d.dataset.cat=b.cat;d.dataset.id=b.id;
+    d.innerHTML='<div class="bc-tick">✓</div>'+
+      '<div class="bc-bar"></div>'+
+      '<div class="bc-info"><div class="bc-name">'+b.n+'</div><div class="bc-fit">'+b.fit+'</div></div>';
+    d.onclick=function(){
+      document.querySelectorAll(".bc").forEach(function(x){x.classList.remove("on")});
+      d.classList.add("on");SEL=b;
+      document.getElementById("s1btn").classList.add("live");
+    };
+    g.appendChild(d);
+  });
+}
+
+function buildMarquee(){
+  var items=["Handgefertigt Deutschland","3D Live-Konfigurator","Premium Carbon","Alcantara Racing","LED Gen 3 Full Arc","Flat Bottom GT","12-Uhr Stripe","Forged Carbon","Markenunabhängig","4–6 Wochen Lieferzeit"];
+  var h="";for(var r=0;r<2;r++) items.forEach(function(i){h+='<span class="mqi">'+i+'</span>'});
+  document.getElementById("mqI").innerHTML=h;
+}
+
+function filt(cat,btn){
+  document.querySelectorAll(".fb").forEach(function(b){b.classList.remove("on")});
+  btn.classList.add("on");
+  document.querySelectorAll(".bc").forEach(function(c){c.classList.toggle("hide",cat!=="all"&&c.dataset.cat!==cat)});
+}
+
+function go(n){
+  if(n===2&&!SEL)return;
+  document.querySelectorAll(".scr").forEach(function(s){s.classList.remove("on")});
+  document.getElementById("s"+n).classList.add("on");
+  ["ns1","ns2","ns3"].forEach(function(id,i){document.getElementById(id).classList.toggle("on",i+1===n)});
+  if(n===2&&SEL){
+    setupBrand(SEL);
+    if(!renderer) initThree();
+    else resize();
+  }
+}
+
+function setupBrand(b){
+  document.getElementById("cpBr").textContent=b.n;
+  document.getElementById("hbName").textContent=b.n;
+  document.getElementById("hbModel").textContent=b.model;
+  document.getElementById("sp0").textContent=b.n;
+  document.getElementById("hbLogo").innerHTML='<svg viewBox="0 0 72 48" xmlns="http://www.w3.org/2000/svg">'+b.svg+'</svg>';
+  if(wheel) document.querySelectorAll(".logoRingText").forEach(function(t){t.textContent=b.hub});
+  calcPrice();updateSum();
+}
+
+function tog(id){
+  var el=document.getElementById(id),was=el.classList.contains("on");
+  document.querySelectorAll(".step").forEach(function(s){s.classList.remove("on")});
+  if(!was) el.classList.add("on");
+}
+
+function initOpts(){
+  document.addEventListener("click",function(e){
+    var item=e.target.closest(".oi");
+    if(!item||!item.dataset.g) return;
+    var g=item.dataset.g,v=item.dataset.v;
+    document.querySelectorAll('[data-g="'+g+'"]').forEach(function(x){x.classList.remove("on")});
+    item.classList.add("on");
+    CFG[g]=v;
+    apply3D(g,v);
+    var SC={led:"sc1",carbon:"sc2",mat:"sc3",stripe:"sc5",flat:"sc6",airbag:"sc7"};
+    if(SC[g]) document.getElementById(SC[g]).textContent=v;
+    var SP={led:"sp1",carbon:"sp2",mat:"sp3"};
+    if(SP[g]) document.getElementById(SP[g]).textContent=v;
+    if(g==="stripe") document.getElementById("sxWrap").style.display=(v!=="Nein"?"block":"none");
+    calcPrice();updateSum();
+  });
+}
+
+function buildSwatches(){
+  var r=document.getElementById("swRow");
+  SCOLORS.forEach(function(c,i){
+    var s=document.createElement("div");
+    s.className="sw"+(i===0?" on":"");
+    s.style.background=c.c;
+    if(c.c==="#222") s.style.boxShadow="inset 0 0 0 1px rgba(255,255,255,0.2)";
+    s.title=c.n;
+    s.onclick=(function(col,el){return function(){
+      document.querySelectorAll(".sw").forEach(function(x){x.classList.remove("on")});
+      el.classList.add("on");CFG.stitch=col;
+      document.getElementById("sc4").textContent=col.n;
+      document.getElementById("swLbl").textContent=col.n+" · Nahtfarbe";
+      document.getElementById("sp4").textContent=col.n;
+      updateStitchColor3D(col.hex);
+      updateSum();playStitch(col.n);
+    };})(c,s);
+    r.appendChild(s);
+  });
+}
+
+function buildStripeColors(){
+  var r=document.getElementById("sxRow");
+  SXCOLORS.forEach(function(c,i){
+    var b=document.createElement("div");
+    b.className="scb"+(i===0?" on":"");
+    b.innerHTML='<div class="scb-dot" style="background:'+c.c+(c.c==="#222"?";box-shadow:inset 0 0 0 1px rgba(255,255,255,0.2)":"")+';"></div><span class="scb-n">'+c.n+'</span>';
+    b.onclick=(function(col,el){return function(){
+      document.querySelectorAll(".scb").forEach(function(x){x.classList.remove("on")});
+      el.classList.add("on");CFG.stripeCol=col;
+      updateStripeColor3D(col.c);
+    };})(c,b);
+    r.appendChild(b);
+  });
+}
+
+var aCtx=null;
+function playStitch(c){
+  try{
+    if(!aCtx) aCtx=new(window.AudioContext||window.webkitAudioContext)();
+    [0,130,270].forEach(function(d){
+      setTimeout(function(){
+        var dur=0.05,buf=aCtx.createBuffer(1,Math.floor(aCtx.sampleRate*dur),aCtx.sampleRate);
+        var data=buf.getChannelData(0);
+        for(var i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*Math.pow(1-i/data.length,2.2)*0.6;
+        var s=aCtx.createBufferSource(),f=aCtx.createBiquadFilter(),g=aCtx.createGain();
+        s.buffer=buf;f.type="bandpass";f.frequency.value=2700+Math.random()*500;f.Q.value=4;
+        g.gain.setValueAtTime(0.7,aCtx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,aCtx.currentTime+dur);
+        s.connect(f);f.connect(g);g.connect(aCtx.destination);s.start();
+      },d);
+    });
+    showToast("Nahtfarbe: "+c);
+  }catch(e){}
+}
+
+function showToast(m){
+  var t=document.getElementById("toast");
+  document.getElementById("toastTxt").textContent=m;
+  t.classList.add("on");
+  setTimeout(function(){t.classList.remove("on")},2600);
+}
+
+function calcPrice(){
+  var t=BASE+(DP.led[CFG.led]||0)+(DP.carbon[CFG.carbon]||0)+(DP.mat[CFG.mat]||0)+(DP.stripe[CFG.stripe]||0)+(DP.flat[CFG.flat]||0)+(DP.airbag[CFG.airbag]||0);
+  var s="€ "+t.toLocaleString("de-DE");
+  document.getElementById("cpPr").textContent=s;
+  document.getElementById("navP").textContent=s;
+}
+
+function updateSum(){
+  document.getElementById("cfSum").innerHTML="<strong>LED:</strong> "+CFG.led+" &nbsp;·&nbsp; <strong>Carbon:</strong> "+CFG.carbon+" &nbsp;·&nbsp; <strong>Material:</strong> "+CFG.mat+" &nbsp;·&nbsp; <strong>Naht:</strong> "+CFG.stitch.n;
+}
+
+function doCart(){
+  if(!SEL){alert("Bitte erst Fahrzeug wählen");return;}
+  var btn=document.getElementById("atcBtn");
+  btn.textContent="✓ "+SEL.n+" gespeichert!";btn.classList.add("done");
+  document.getElementById("ns3").classList.add("on");
+  setTimeout(function(){btn.textContent="In den Warenkorb";btn.classList.remove("done");document.getElementById("ns3").classList.remove("on");},4000);
+}
+</script>
+</body>
+</html>
