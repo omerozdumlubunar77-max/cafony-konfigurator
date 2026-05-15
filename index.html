@@ -395,12 +395,22 @@ function parseGLB(buf){
 
 function preloadStitch(){
   var loader=new THREE.TextureLoader();
-  var names=Object.keys(STITCH_FILES);var done=0;
+  var names=Object.keys(STITCH_FILES);
+  var done=0;
+  function checkDone(){
+    done++;
+    if(done>=names.length){
+      lp(100,"Fertig!");
+      setTimeout(function(){document.getElementById("lov").classList.add("gone");setupCtrl();animate();},350);
+    }
+  }
   names.forEach(function(name){
-    var t=loader.load(BASE_URL+STITCH_FILES[name],function(){
-      t.encoding=THREE.sRGBEncoding;t.flipY=false;t.needsUpdate=true;
-      done++;if(done===names.length){lp(100,"Fertig!");setTimeout(function(){document.getElementById("lov").classList.add("gone");setupCtrl();animate();},350);}
-    });
+    var t=loader.load(
+      BASE_URL+STITCH_FILES[name],
+      function(){t.encoding=THREE.sRGBEncoding;t.flipY=false;t.needsUpdate=true;checkDone();},
+      undefined,
+      function(err){console.warn("Tex failed:",name,err);checkDone();}
+    );
     stitchThree[name]=t;
   });
 }
